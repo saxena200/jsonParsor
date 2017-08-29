@@ -1,0 +1,59 @@
+import pandas
+import csv
+input_file = r'C:\Users\cwr.arun.saxena\Desktop\OMA DM\OMADMFiles\OMADM SystemInfo\test2.txt'
+output_file = input_file + "__deserialized.txt"
+
+def deserialize(data):
+    import phpserialize
+    import ast
+    import json
+    data = "'"+data+"'"
+    data = ast.literal_eval(format(data)).encode('utf-8')
+    j1 = phpserialize.unserialize(data)
+    j1 = phpserialize.loads(phpserialize.dumps(j1), decode_strings=True)
+    j1 = json.dumps(j1)
+    return j1
+    
+def CustomParser(data):
+    import json
+    j1 = json.loads(data)
+    j1 = j1
+    return j1
+
+def flatten(data, parent_key='', sep='_'):
+    import collections
+    import ast
+    import json
+    data = ast.literal_eval(format(data))
+    items = []
+    for k, v in data.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten(v, new_key, sep=sep).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
+
+df = pandas.read_csv(input_file,sep="|",converters={'setting_info':deserialize},header=0,encoding="utf-8")
+print (df)
+df.to_csv(output_file,sep="|",encoding="utf-8")
+df.to_json(r'C:\Users\cwr.arun.saxena\Desktop\OMA DM\OMADMFiles\OMADM SystemInfo\SettingInfoDeserial_New.json')
+
+
+df1 = pandas.read_csv(output_file,sep="|",converters={'setting_info':CustomParser},header=0,encoding="utf-8")
+df1[sorted(df1['setting_info'][0].keys())] = df1['setting_info'].apply(pandas.Series)
+#print (df1)
+df1.to_csv(r'C:\Users\cwr.arun.saxena\Desktop\OMA DM\OMADMFiles\OMADM SystemInfo\SettingsInfo_json.txt',sep="|",encoding="utf-8")
+df1.to_json(r'C:\Users\cwr.arun.saxena\Desktop\OMA DM\OMADMFiles\OMADM SystemInfo\SettingInfoIntermediate.json')
+
+
+#fields = ['device_udate']
+df2 = pandas.read_csv(r'C:\Users\cwr.arun.saxena\Desktop\OMA DM\OMADMFiles\OMADM SystemInfo\SettingsInfo_json.txt',sep="|",converters={'setting_info':flatten},header=0,encoding="utf-8")
+df2[sorted(df2['setting_info'][0].keys())] = df2['setting_info'].apply(pandas.Series)
+#print (df2)
+df2.to_csv(r'C:\Users\cwr.arun.saxena\Desktop\OMA DM\OMADMFiles\OMADM SystemInfo\SettingsInfo_Flat.txt',sep = ",",encoding="utf-8")
+df.to_json(r'C:\Users\cwr.arun.saxena\Desktop\OMA DM\OMADMFiles\OMADM SystemInfo\SettingsInfoFlat_New.json',force_ascii=False)
+
+#df3 = pandas.read_json(r'/Users/arunsaxena/Desktop/AWS/AWS CloudFormation/files/Newdata1234567_flatten1234567.txt')
+#print (df3)
+#df3.to_csv(r'/Users/arunsaxena/Desktop/AWS/AWS CloudFormation/files/roughdata1234567.txt',sep="|",encoding="utf-8")
